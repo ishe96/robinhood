@@ -12,7 +12,7 @@ const swapTokens = async(req, res) =>{
             timestamp: new Date(Date.now()).toISOString()
         }
 
-        await client.createIfNotExist(txDoc)
+        await client.createIfNotExists(txDoc)
 
         res.status(201).send({message:'success'})
         console.log('swapTokens success')

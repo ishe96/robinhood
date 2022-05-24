@@ -1,5 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
+import { RobinhoodContext } from "../context/RobinhoodContext";
 
 const styles = {
     container: "flex w-screen h-15 bg-black px-24 py-3 mb-5 fixed",
@@ -16,9 +17,16 @@ const styles = {
 };
 
 const Header = () => {
-    const isAuthenticated = false;
-    const formattedAccount = '0xb45...61t'
-    // const {connectWallet, signOut, currentAccount, isAuthenticated, formattedAccount, swapTokens} = useContext(RobinhoodContext)
+    // const isAuthenticated = false;
+    // const formattedAccount = "0xb45...61t";
+    const {
+        connectWallet,
+        signOut,
+        currentAccount,
+        isAuthenticated,
+        formattedAccount,
+        swapTokens,
+    } = useContext(RobinhoodContext);
 
     return (
         <div className={styles.container}>
@@ -46,13 +54,15 @@ const Header = () => {
 
                 {isAuthenticated && (
                     <>
-                        <div className={styles.menuItem}>{formattedAccount}</div>
-                        <div className={styles.menuItem}>LogOut</div>
+                        <div className={styles.menuItem}>
+                            {formattedAccount}
+                        </div>
+                        <div className={styles.menuItem} onClick={() => signOut()} >LogOut</div>
                     </>
                 )}
 
                 {!isAuthenticated && (
-                    <div className={styles.menuItem}>Login</div>
+                    <div className={styles.menuItem} onClick={() => connectWallet()} >Login</div>
                 )}
             </div>
         </div>
