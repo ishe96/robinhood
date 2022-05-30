@@ -12,7 +12,7 @@ const createUser = async (req, res) => {
 
         // await client.createIfNotExists(userDoc);
 
-        await client.create(userDoc).then((res) => {
+        await client.createIfNotExists(userDoc).then((res) => {
             console.log(`Created user : ${res._id}`);
         });
 

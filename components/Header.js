@@ -1,11 +1,16 @@
 import React, { useContext, useEffect } from "react";
+import Image from "next/image";
 import { AiOutlineSearch } from "react-icons/ai";
 import { RobinhoodContext } from "../context/RobinhoodContext";
 
+import logosm from '../assets/logosm.png'
+
 const styles = {
     container: "flex w-screen h-15 bg-black px-24 py-3 mb-5 fixed",
-    leftHeader: "flex flex-1",
-    logo: "object-cover cursor-pointer",
+    leftHeader: "flex flex-1 relative",
+    leftSide: 'flex flex-1 md:flex-row justify-between gap-1',
+    logo: "object-contain cursor-pointer",
+    logoName: "text-gray-300 text-xl font-bold ml-2",
     searchWrapper: "flex flex-1",
     searchInputContainer:
         "text-white items-center flex flex-1 -ml-64 border-gray-400 mr-64 hover:bg-[#1e2123] duration-300 p-3 rounded-lg",
@@ -17,8 +22,7 @@ const styles = {
 };
 
 const Header = () => {
-    // const isAuthenticated = false;
-    // const formattedAccount = "0xb45...61t";
+    
     const {
         connectWallet,
         signOut,
@@ -30,11 +34,13 @@ const Header = () => {
 
     return (
         <div className={styles.container}>
+            <div className={styles.leftSide}>
             <div className={styles.leftHeader}>
-                <div>Logo Here</div>
+                <Image src={logosm} alt='logosm' height={20} width={20} className={styles.logo}/>
+                <div className={styles.logoName}>Etherswap</div>
             </div>
 
-            <div className={styles.searchWrapper}>
+            {/* <div className={styles.searchWrapper}>
                 <div className={styles.searchInputContainer}>
                     <AiOutlineSearch className={styles.searchIcon} />
                     <div className={styles.searchInputWrapper}>
@@ -44,13 +50,14 @@ const Header = () => {
                         />
                     </div>
                 </div>
+            </div> */}
             </div>
 
             <div className={styles.rightHeader}>
                 <div className={styles.menuItem}>Rewards</div>
-                <div className={styles.menuItem}>Portfolio</div>
+                {/* <div className={styles.menuItem}>Portfolio</div> */}
                 <div className={styles.menuItem}>Cash</div>
-                <div className={styles.menuItem}>Messages</div>
+                {/* <div className={styles.menuItem}>Messages</div> */}
 
                 {isAuthenticated && (
                     <>

@@ -12,7 +12,11 @@ const swapTokens = async(req, res) =>{
             timestamp: new Date(Date.now()).toISOString()
         }
 
-        await client.createIfNotExists(txDoc)
+        // await client.createIfNotExists(txDoc)
+
+        await client.createIfNotExists(txDoc).then((res) => {
+            console.log(`Success Transaction : ${res._id}`);
+        });
 
         res.status(201).send({message:'success'})
         console.log('swapTokens success')

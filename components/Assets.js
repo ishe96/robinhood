@@ -5,9 +5,9 @@ const styles = {
     wrapper:'flex justify-between p-5 hover:bg-[#30363b] duration-300',
     container:'flex flex-col text-white items-center justify-center',
     name: 'font-bold',
-    chart:'w-36 h-full',
+    chart:'w-1/3 h-full',
     price:'flex flex-col text-white',
-    percent: 'text-gree-400'
+    percent: 'text-green-400'
 };
 
 const Asset = ({ coin, price }) => {
@@ -69,7 +69,7 @@ const Asset = ({ coin, price }) => {
                 <div className={styles.name}>{coin.symbol}</div>
             </div>
 
-            <div>
+            {/* <div>
                 <div className={styles.chart}>
                     <Line
                         data={data}
@@ -78,7 +78,7 @@ const Asset = ({ coin, price }) => {
                         height={150}
                     />
                 </div>
-            </div>
+            </div> */}
 
             <div className={styles.price}>
                 <div>{price}</div>
