@@ -3,6 +3,7 @@ import { BiDotsHorizontalRounded } from "react-icons/bi";
 import { AiOutlinePlus } from "react-icons/ai";
 import { GoTriangleDown } from "react-icons/go";
 import { GoTriangleUp } from "react-icons/go";
+import { IoWarning } from "react-icons/io5"
 import Header from "../components/Header";
 import PortfolioChart from "../components/PortfolioChart";
 import BuyTokens from "../components/BuyTokens";
@@ -21,7 +22,9 @@ const styles = {
     portfolioAmountContainer: "flex flex-col",
     accountAmounts: "flex flex-row justify-between",
     portfolioAmount: "flex text-gray-400 text-4xl",
-    usdAmount: "flex text-white text-sm font-bold items-end",
+    warnFunds: "flex text-yellow-500 text-sm font-700 items-end",
+    dangerFunds: "flex text-orange-600 text-sm font-500 items-center items-end",
+    usdAmount: "flex flex-col text-white text-sm font-semibold items-end",
     portfolioPercent: "flex ml-2 text-gray-400 font-bold text-sm",
     pastPercent: "flex items-center mr-2",
     pastHour: "text-gray-400",
@@ -61,7 +64,7 @@ export default function Home({
     const [myCoins] = useState([...coins.slice(0, 15)]);
     const { balance, currentAccount } = useContext(RobinhoodContext);
 
-    console.log(currentAccount);
+    // console.log(currentAccount);
 
     let usdAcc = balance * ethPrice;
 
@@ -81,6 +84,30 @@ export default function Home({
                     <div className={styles.portfolioAmount}>
                         <GoTriangleDown style={{ color: "red" }} />
                         {balance} ETH
+                    </div>
+                </>
+            );
+        }
+    };
+
+    const fundsLevel = () => {
+        if (balance < 0.05) {
+            return (
+                <>
+                    <div className={styles.dangerFunds}>
+                        <IoWarning style={{ color: "red" }} />
+                        Top up funds.
+                    </div>
+                </>
+            );
+        }
+
+        if(balance === 0.05) {
+            return (
+                <>
+                    <div className={styles.warnFunds}>
+                        <IoWarning style={{ color: "orange" }} />
+                        Get ready to top up.
                     </div>
                 </>
             );
@@ -122,6 +149,7 @@ export default function Home({
                         <div className={styles.accountAmounts}>
                             {ethLevel()}
                             <div className={styles.usdAmount}>
+                                {fundsLevel()}
                                 USD : ${parseFloat(usdAcc).toFixed(2)}
                             </div>
                         </div>

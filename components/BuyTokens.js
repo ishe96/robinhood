@@ -13,6 +13,7 @@ const styles = {
 
 const BuyTokens = () => {
     const {
+        balance,
         isAuthenticated,
         setAmount,
         mint,
@@ -22,6 +23,25 @@ const BuyTokens = () => {
         toCoin,
         setToCoin,
     } = useContext(RobinhoodContext);
+
+    const checkBal = () => {
+        try {
+            if (balance < 0.05) {
+                return console.log("Funds depleted. Top up your account");
+            } else{
+                 return <button
+                        className={styles.noticeCTA}
+                        type="button"
+                        disabled={!isAuthenticated}
+                        onClick={() => mint()}
+                    >
+                        Send
+                    </button>
+            }
+        } catch (error) {
+            console.log(error.message);
+        }
+    };
 
     return (
         <form className={styles.formContainer}>
@@ -78,14 +98,18 @@ const BuyTokens = () => {
                     onChange={(e) => setAmount(e.target.value)}
                 />
 
-                <button
-                    className={styles.noticeCTA}
-                    type="button"
-                    disabled={!isAuthenticated}
-                    onClick={() => mint()}
-                >
-                    Send
-                </button>
+                {/* {checkBal && (
+                    <button
+                        className={styles.noticeCTA}
+                        type="button"
+                        disabled={!isAuthenticated}
+                        onClick={() => mint()}
+                    >
+                        Send
+                    </button>
+                )} */}
+
+                {checkBal()}
             </div>
         </form>
     );

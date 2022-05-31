@@ -21,7 +21,7 @@ export const RobinhoodProvider = ({ children }) => {
     const [toCoin, setToCoin] = useState("");
     const [balance, setBalance] = useState("");
 
-    const [amount, setAmount] = useState("");
+    const [amount, setAmount] = useState(0);
 
     const { isAuthenticated, authenticate, user, logout, Moralis, enableWeb3 } =
         useMoralis();
@@ -101,7 +101,7 @@ export const RobinhoodProvider = ({ children }) => {
                 let options = {
                     contractAddress: contractAddress,
                     functionName: "mint",
-                    abi: "abi",
+                    abi: abi,
                     params: {
                         to: currentAccount,
                         amount: Moralis.Units.Token("50", "18"),
@@ -162,29 +162,37 @@ export const RobinhoodProvider = ({ children }) => {
         if (!isAuthenticated) return;
         const contractAddress = getToAddress();
 
+        let sendAmount = amount * 0.015
+
         let options = {
             type: "native",
-            amount: Moralis.Units.ETH("0.01"),
+            amount: Moralis.Units.ETH(`${sendAmount}`),
             receiver: contractAddress,
         };
 
         const transaction = await Moralis.transfer(options);
         const receipt = await transaction.wait();
         console.log(receipt);
-        saveTransaction(receipt.transactionHarsh, "0.01", receipt.to);
+        saveTransaction(receipt.transactionHarsh, sendAmount, receipt.to);
     };
 
-    const saveTransaction = async (txHash, amount, toAddress) => {
+    const saveTransaction = async (_id, txHash) => {
+
+        const contractAddress = getToAddress();
+
+        let sendAmount = amount * 0.015
+
         await fetch("/api/swapTokens", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                id: _id,
                 txHash: txHash,
                 from: currentAccount,
-                to: toAddress,
-                amount: parseFloat(amount),
+                to: contractAddress,
+                amount: sendAmount.toFixed(6),
             }),
         });
     };

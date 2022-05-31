@@ -2,7 +2,7 @@ import { client } from "../../lib/sanityClient";
 
 const createUser = async (req, res) => {
     try {
-        console.log("CREATING USER : ");
+        console.log("CREATING USER ");
         const userDoc = {
             _type: "users",
             _id: req.body.walletAddress,

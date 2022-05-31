@@ -2,6 +2,7 @@ import {client} from '../../lib/sanityClient'
 
 const swapTokens = async(req, res) =>{
     try {
+        console.log('Waiting for transaction')
         const txDoc ={
             _type : 'transactions',
             _id : req.body.txHash,
