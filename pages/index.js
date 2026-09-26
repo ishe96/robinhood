@@ -118,7 +118,7 @@ export default function Home({
                   padding: 24, textAlign: 'center',
                   color: 'var(--es-muted)', fontSize: 13,
                 }}>
-                  No results for "{assetSearch}"
+                  No results for &quot;{assetSearch}&quot;
                 </div>
               ) : (
                 filteredCoins.map((coin) => (

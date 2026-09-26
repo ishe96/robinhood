@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useMemo } from 'react';
 
 const MiniSparkline = ({ data = [], color }) => {
@@ -60,7 +61,7 @@ const Asset = ({ coin, price }) => {
       fake.push(base);
     }
     return fake;
-  }, [coin.uuid]);
+  }, [coin.sparkline, price]);
 
   const marketCap = coin.marketCap
     ? `$${(parseFloat(coin.marketCap) / 1e9).toFixed(1)}B`

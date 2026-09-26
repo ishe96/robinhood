@@ -58,7 +58,7 @@ const ChartPanel = ({
       g.addColorStop(1, isUp ? 'rgba(18,217,146,0.01)' : 'rgba(255,69,96,0.01)');
       setGradient(g);
     }
-  }, [chartType, isUp, chartRef.current]);
+  }, [chartType, isUp]);
 
   const data = {
     labels,
