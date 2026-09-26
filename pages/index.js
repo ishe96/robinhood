@@ -1,338 +1,288 @@
-// import styles from '../styles/Home.module.css'
-import { BiDotsHorizontalRounded } from "react-icons/bi";
-import { AiOutlinePlus } from "react-icons/ai";
-import { GoTriangleDown } from "react-icons/go";
-import { GoTriangleUp } from "react-icons/go";
-import { IoWarning } from "react-icons/io5"
-import Header from "../components/Header";
-import PortfolioChart from "../components/PortfolioChart";
-import BuyTokens from "../components/BuyTokens";
-import Asset from "../components/Assets";
-import Notice from "../components/Notice";
-import axios from "axios";
-
-import { useState, useContext } from "react";
-import { RobinhoodContext } from "../context/RobinhoodContext";
-import LineChart from "../components/LineChart";
-
-const styles = {
-    wrapper: "w-screen h-screen flex flex-col",
-    mainContainer: "w-2/3 h-full m-auto flex mt-16",
-    leftMain: "flex flex-col w-3/4 h-full p-6 overflow-y-scroll",
-    portfolioAmountContainer: "flex flex-col",
-    accountAmounts: "flex flex-row justify-between",
-    portfolioAmount: "flex text-gray-400 text-4xl",
-    warnFunds: "flex text-yellow-500 text-sm font-700 items-end",
-    dangerFunds: "flex text-orange-600 text-sm font-500 items-center items-end",
-    usdAmount: "flex flex-col text-white text-sm font-semibold items-end",
-    portfolioPercent: "flex ml-2 text-gray-400 font-bold text-sm",
-    pastPercent: "flex items-center mr-2",
-    pastHour: "text-gray-400",
-    chartContainer:
-        "text-5xl flex justify-center w-full h-1/3 text-white mt-11 mb-11",
-    buyingPowerContainer:
-        "w-full border-t mb-24 border-b h-16 border-[#30363b] flex justify-between items-center p-4",
-    buyingPowerTitle: "text-gray-400 font-bolder text-lg",
-    buyingPowerAmount: "text-gray-400 font-bolder text=xl",
-    notice: "flex border border-[#30363b] mx-11 my-4 p-5 flex-col flex-1",
-    noticeContainer: "flex-1",
-    noticeTitle: "text-gray-500",
-    noticeMessage: "text-gray-400 font-bold",
-    noticeCTA: "font-bold text-green-500 cursor-pointer mt-5",
-    rightMain:
-        "flex flex-col flex-1 h-4/5 bg-[#1e2123] mt-6 rounded-lg overflow-y-scroll noscroll",
-    rightMainItem: "flex items-center text-white p-5 border-b border-[#30363b]",
-    ItemTitle: "flex font-bold",
-    moreOptions: "cursor-pointer text-xl",
-};
+import { useState, useContext } from 'react';
+import axios from 'axios';
+import Header from '../components/Header';
+import MarketTicker from '../components/MarketTicker';
+import ChartPanel from '../components/ChartPanel';
+import SwapPanel from '../components/SwapPanel';
+import NewsSection from '../components/NewsSection';
+import Asset from '../components/Assets';
+import WalletCard from '../components/WalletCard';
+import { RobinhoodContext } from '../context/RobinhoodContext';
 
 export default function Home({
-    coins,
-    ethChange,
-    ethName,
-    ethSymbol,
-    ethPrice,
-    ethHist,
-    coinHistory,
-    coinHistoryTime,
-    priceHigh,
-    priceLow,
-    priceAvg,
+  coins,
+  ethChange,
+  ethPrice,
+  ethHist,
+  coinHistoryTime,
+  priceHigh,
+  priceLow,
+  priceAvg,
+  ohlcData,
 }) {
-    console.log(priceHigh);
+  const [assetSearch, setAssetSearch] = useState('');
+  const { balance } = useContext(RobinhoodContext);
 
-    const [myCoins] = useState([...coins.slice(0, 15)]);
-    const { balance, currentAccount } = useContext(RobinhoodContext);
-
-    // console.log(currentAccount);
-
-    let usdAcc = balance * ethPrice;
-
-    const ethLevel = () => {
-        if (balance > 0.05) {
-            return (
-                <>
-                    <div className={styles.portfolioAmount}>
-                        <GoTriangleUp style={{ color: "#00ff1a" }} />
-                        {balance} ETH
-                    </div>
-                </>
-            );
-        } else {
-            return (
-                <>
-                    <div className={styles.portfolioAmount}>
-                        <GoTriangleDown style={{ color: "red" }} />
-                        {balance} ETH
-                    </div>
-                </>
-            );
-        }
-    };
-
-    const fundsLevel = () => {
-        if (balance < 0.05) {
-            return (
-                <>
-                    <div className={styles.dangerFunds}>
-                        <IoWarning style={{ color: "red" }} />
-                        Top up funds.
-                    </div>
-                </>
-            );
-        }
-
-        if(balance === 0.05) {
-            return (
-                <>
-                    <div className={styles.warnFunds}>
-                        <IoWarning style={{ color: "orange" }} />
-                        Get ready to top up.
-                    </div>
-                </>
-            );
-        }
-    };
-
-    const ethChangeLevel = () => {
-        if (ethChange > 0) {
-            return (
-                <div
-                    className={styles.pastPercent}
-                    style={{ color: "#00ff1a" }}
-                >
-                    <span>
-                        <GoTriangleUp style={{ fontSize: 20 }} />
-                    </span>
-                    <span>{ethChange}%</span>
-                </div>
-            );
-        } else {
-            return (
-                <div className={styles.pastPercent} style={{ color: "red" }}>
-                    <span>
-                        <GoTriangleDown style={{ fontSize: 20 }} />
-                    </span>
-                    <span> {ethChange}% </span>;
-                </div>
-            );
-        }
-    };
-
-    return (
-        <div className={styles.wrapper}>
-            <Header />
-
-            <div className={styles.mainContainer}>
-                <div className={styles.leftMain}>
-                    <div className={styles.portfolioAmountContainer}>
-                        <div className={styles.accountAmounts}>
-                            {ethLevel()}
-                            <div className={styles.usdAmount}>
-                                {fundsLevel()}
-                                USD : ${parseFloat(usdAcc).toFixed(2)}
-                            </div>
-                        </div>
-                        <div className={styles.portfolioPercent}>
-                            {ethChangeLevel()}
-                            <span className={styles.pastHour}> Past Hour</span>
-                        </div>
-                    </div>
-                    <div className={styles.chartContainer}>
-                        {/* <PortfolioChart /> */}
-
-                        <LineChart
-                            key={ethName}
-                            coinChange={ethChange}
-                            price={ethPrice}
-                            coinHistory={coinHistoryTime}
-                            priceHigh={priceHigh}
-                            priceLow={priceLow}
-                            priceAvg={priceAvg}
-                        />
-                    </div>
-
-                    <div className={styles.buyingPowerContainer}>
-                        <div className={styles.buyingPowerTitle}>
-                            Buying Power
-                        </div>
-                        <div className={styles.buyingPowerAmount}>
-                            {balance} ETH
-                        </div>
-                    </div>
-
-                    <div className={styles.notice}>
-                        <div className={styles.noticeContainer}>
-                            <div className={styles.noticeTitle}>Send Funds</div>
-                            <div className={styles.noticeMessage}>
-                                Transaction transfer
-                            </div>
-                            <BuyTokens />
-                        </div>
-                    </div>
-                    <Notice />
-                </div>
-
-                {/* </div> */}
-
-                <div className={styles.rightMain}>
-                    <div className={styles.rightMainItem}>
-                        <div className={styles.ItemTitle}>
-                            Crypto Currencies
-                        </div>
-
-                        <BiDotsHorizontalRounded
-                            className={styles.moreOptions}
-                        />
-                    </div>
-
-                    {myCoins.map((coin) => {
-                        let price = parseFloat(coin.price);
-                        price = price.toFixed(2);
-
-                        return (
-                            <Asset key={coin.uuid} coin={coin} price={price} />
-                        );
-                    })}
-
-                    <div className={styles.rightMainItem}>
-                        <div className={styles.ItemTitle}>Lists</div>
-                        <AiOutlinePlus className={styles.moreOptions} />
-                    </div>
-                </div>
-            </div>
-        </div>
+  const filteredCoins = (coins || [])
+    .slice(0, 20)
+    .filter((c) =>
+      !assetSearch ||
+      c.symbol.toLowerCase().includes(assetSearch.toLowerCase()) ||
+      c.name.toLowerCase().includes(assetSearch.toLowerCase())
     );
+
+  return (
+    <div style={{ background: 'var(--es-bg)', minHeight: '100vh' }}>
+      <Header />
+
+      <div style={{ paddingTop: 60 }}>
+        <MarketTicker coins={coins || []} />
+      </div>
+
+      <main style={{
+        maxWidth: 1320,
+        margin: '0 auto',
+        padding: '24px 24px 64px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 380px',
+        gap: 20,
+        alignItems: 'start',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+          <PortfolioHeader
+            balance={balance}
+            ethPrice={ethPrice}
+            ethChange={ethChange}
+          />
+
+          <ChartPanel
+            coinHistory={coinHistoryTime}
+            coinChange={ethChange}
+            ethPrice={ethPrice}
+            priceHigh={priceHigh}
+            priceLow={priceLow}
+            priceAvg={priceAvg}
+            ohlcData={ohlcData}
+          />
+
+          <SwapPanel />
+
+          <NewsSection />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 94 }}>
+          <WalletCard ethPrice={ethPrice} ethChange={ethChange} />
+
+          <div className="es-card" style={{ overflow: 'hidden' }}>
+            <div style={{
+              padding: '14px 16px 10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderBottom: '1px solid var(--es-border)',
+            }}>
+              <h2 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--es-text)' }}>
+                Markets
+              </h2>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none"
+                  style={{ position: 'absolute', left: 7, color: 'var(--es-muted)' }}>
+                  <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M12.5 12.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input
+                  value={assetSearch}
+                  onChange={(e) => setAssetSearch(e.target.value)}
+                  placeholder="Filter…"
+                  style={{
+                    background: 'var(--es-hover)',
+                    border: '1px solid var(--es-border)',
+                    borderRadius: 6,
+                    padding: '5px 8px 5px 24px',
+                    color: 'var(--es-text)',
+                    fontSize: 11,
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                    width: 110,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{
+              maxHeight: 500,
+              overflowY: 'auto',
+            }}
+              className="noscroll"
+            >
+              {filteredCoins.length === 0 ? (
+                <div style={{
+                  padding: 24, textAlign: 'center',
+                  color: 'var(--es-muted)', fontSize: 13,
+                }}>
+                  No results for "{assetSearch}"
+                </div>
+              ) : (
+                filteredCoins.map((coin) => (
+                  <Asset
+                    key={coin.uuid}
+                    coin={coin}
+                    price={parseFloat(coin.price).toFixed(
+                      parseFloat(coin.price) < 1 ? 6 : 2
+                    )}
+                  />
+                ))
+              )}
+            </div>
+
+            <div style={{
+              padding: '10px 16px',
+              borderTop: '1px solid var(--es-border)',
+              fontSize: 11, color: 'var(--es-muted)', textAlign: 'center',
+            }}>
+              Powered by CoinRanking · Updated 24H
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function PortfolioHeader({ balance, ethPrice, ethChange }) {
+  const usd = (parseFloat(balance || 0) * parseFloat(ethPrice || 0));
+  const isUp = parseFloat(ethChange || 0) >= 0;
+
+  return (
+    <div style={{ paddingBottom: 4 }}>
+      <div style={{
+        fontSize: 11, color: 'var(--es-muted)', fontWeight: 600,
+        letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6,
+      }}>
+        Your portfolio · ETH
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{
+          fontSize: 36, fontWeight: 700,
+          fontFamily: 'JetBrains Mono, monospace',
+          color: 'var(--es-text)',
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+        }}>
+          {parseFloat(balance || 0).toFixed(4)}
+          <span style={{ fontSize: 16, marginLeft: 6, color: 'var(--es-sub)', fontWeight: 500 }}>ETH</span>
+        </div>
+        <div style={{ paddingBottom: 4 }}>
+          <div style={{
+            fontSize: 18, fontWeight: 600,
+            fontFamily: 'JetBrains Mono, monospace',
+            color: 'var(--es-sub)',
+          }}>
+            ${usd.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, fontFamily: 'JetBrains Mono, monospace', marginTop: 2,
+          }}>
+            <span style={{
+              color: isUp ? 'var(--es-up)' : 'var(--es-down)',
+              fontWeight: 700,
+            }}>
+              {isUp ? '▲' : '▼'} {Math.abs(parseFloat(ethChange || 0)).toFixed(2)}%
+            </span>
+            <span style={{ color: 'var(--es-muted)' }}>past 24H</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export const getStaticProps = async () => {
-    const axios = require("axios");
+  const options = {
+    method: 'GET',
+    url: 'https://coinranking1.p.rapidapi.com/coins',
+    params: {
+      referenceCurrencyUuid: 'yhjMzLPhuIDl',
+      timePeriod: '24h',
+      tiers: '1',
+      orderBy: 'marketCap',
+      orderDirection: 'desc',
+      limit: '50',
+      offset: '0',
+    },
+    headers: {
+      'X-RapidAPI-Host': 'coinranking1.p.rapidapi.com',
+      'X-RapidAPI-Key': process.env.COIN_RANKING_KEY || '0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e',
+    },
+  };
 
-    const options = {
-        method: "GET",
-        url: "https://coinranking1.p.rapidapi.com/coins",
-        params: {
-            referenceCurrencyUuid: "yhjMzLPhuIDl",
-            timePeriod: "24h",
-            tiers: "1",
-            orderBy: "marketCap",
-            orderDirection: "desc",
-            limit: "50",
-            offset: "0",
-        },
-        headers: {
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-            "X-RapidAPI-Key":
-                "0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e",
-        },
-    };
+  const ethOptions = {
+    method: 'GET',
+    url: 'https://coinranking1.p.rapidapi.com/coin/razxDUgYGNAdQ',
+    params: { referenceCurrencyUuid: 'yhjMzLPhuIDl', timePeriod: '24h' },
+    headers: {
+      'X-RapidAPI-Host': 'coinranking1.p.rapidapi.com',
+      'X-RapidAPI-Key': process.env.COIN_RANKING_KEY || '0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e',
+    },
+  };
 
-    const ethOptions = {
-        method: "GET",
-        url: "https://coinranking1.p.rapidapi.com/coin/razxDUgYGNAdQ",
-        params: { referenceCurrencyUuid: "yhjMzLPhuIDl", timePeriod: "24h" },
-        headers: {
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-            "X-RapidAPI-Key":
-                "0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e",
-        },
-    };
+  const ohlcOptions = {
+    method: 'GET',
+    url: 'https://coinranking1.p.rapidapi.com/coin/razxDUgYGNAdQ/ohlc',
+    params: { referenceCurrencyUuid: 'yhjMzLPhuIDl', interval: 'day' },
+    headers: {
+      'X-RapidAPI-Host': 'coinranking1.p.rapidapi.com',
+      'X-RapidAPI-Key': process.env.COIN_RANKING_KEY || '0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e',
+    },
+  };
 
-    const chartOptions = {
-        method: "GET",
-        url: "https://coinranking1.p.rapidapi.com/coins/?uuid[]=razxDUgYGNAdQ",
-        params: {
-            referenceCurrencyUuid: "yhjMzLPhuIDl",
-            timePeriod: "24h",
-            tiers: "1",
-            orderBy: "marketCap",
-            orderDirection: "desc",
-            limit: "1",
-            offset: "0",
-        },
-        headers: {
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-            "X-RapidAPI-Key":
-                "0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e",
-        },
-    };
+  try {
+    const [coinsRes, ethRes, ohlcRes] = await Promise.all([
+      axios.request(options),
+      axios.request(ethOptions),
+      axios.request(ohlcOptions),
+    ]);
 
-    const ohlcOptions = {
-        method: "GET",
-        url: "https://coinranking1.p.rapidapi.com/coin/razxDUgYGNAdQ/ohlc",
-        params: { referenceCurrencyUuid: "yhjMzLPhuIDl", interval: "day" },
-        headers: {
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-            "X-RapidAPI-Key":
-                "0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e",
-        },
-    };
+    const coins        = coinsRes.data.data.coins;
+    const ethCoin      = ethRes.data.data.coin;
+    const ethChange    = JSON.parse(ethCoin.change);
+    const ethPrice     = JSON.parse(ethCoin.price);
+    const ethHist      = JSON.stringify(ethCoin.sparkline || []);
+    const coinHistoryTime = ethCoin.sparkline || [];
 
-    const histOptions = {
-        method: "GET",
-        url: "https://coinranking1.p.rapidapi.com/coin/razxDUgYGNAdQ",
-        params: { referenceCurrencyUuid: "yhjMzLPhuIDl", timePeriod: "24h" },
-        headers: {
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-            "X-RapidAPI-Key":
-                "0e63d878b0msh67e3663ab62bb7fp1af80ejsn0535c3e5f87e",
-        },
-    };
+    const rawOhlc  = ohlcRes.data.data.ohlc || [];
+    const ohlcData = rawOhlc.slice(0, 30);
 
-    const res = await axios.request(options);
-    const ethRes = await axios.request(ethOptions);
-    const histRes = await axios.request(chartOptions);
-    const historRes = await axios.request(histOptions);
-    const ohlcRes = await axios.request(ohlcOptions);
-
-    const coinHistory = historRes.data.data.coin;
-    const coinHistoryTime = historRes.data.data.coin.sparkline;
-
-    const coins = res.data.data.coins;
-    const ethChange = JSON.parse(ethRes.data.data.coin.change);
-    const ethName = JSON.stringify(ethRes.data.data.coin.uuid);
-    const ethSymbol = JSON.stringify(ethRes.data.data.coin.symbol);
-    const ethPrice = JSON.parse(ethRes.data.data.coin.price);
-
-    const ethHist = JSON.stringify(histRes.data.data.coins);
-
-    const priceHigh = ohlcRes.data.data.ohlc?.[0].high;
-    const priceLow = ohlcRes.data.data.ohlc?.[0].low;
-    const priceAvg = ohlcRes.data.data.ohlc?.[0].avg;
+    const priceHigh = rawOhlc[0]?.high  || null;
+    const priceLow  = rawOhlc[0]?.low   || null;
+    const priceAvg  = rawOhlc[0]?.avg   || null;
 
     return {
-        props: {
-            coins,
-            ethChange,
-            ethName,
-            ethPrice,
-            ethSymbol,
-            ethHist,
-            coinHistory,
-            coinHistoryTime,
-            priceHigh,
-            priceLow,
-            priceAvg,
-        },
+      props: {
+        coins,
+        ethChange,
+        ethPrice,
+        ethHist,
+        coinHistoryTime,
+        priceHigh,
+        priceLow,
+        priceAvg,
+        ohlcData,
+      },
     };
+  } catch (err) {
+    console.error('getStaticProps error:', err.message);
+    return {
+      props: {
+        coins: [],
+        ethChange: 0,
+        ethPrice: 0,
+        ethHist: '[]',
+        coinHistoryTime: [],
+        priceHigh: null,
+        priceLow: null,
+        priceAvg: null,
+        ohlcData: [],
+      },
+    };
+  }
 };
