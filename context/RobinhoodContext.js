@@ -1,230 +1,235 @@
-import { createContext, useEffect, useState } from "react";
-import { useMoralis } from "react-moralis";
-
+import { createContext, useEffect, useState, useCallback } from 'react';
+import { ethers } from 'ethers';
 import {
-    btcAbi,
-    dogeAbi,
-    solanaAbi,
-    usdcAbi,
-    btcAddress,
-    dogeAddress,
-    solanaAddress,
-    usdcAddress,
-} from "../lib/constants";
+  btcAbi,
+  dogeAbi,
+  solanaAbi,
+  usdcAbi,
+  btcAddress,
+  dogeAddress,
+  solanaAddress,
+  usdcAddress,
+} from '../lib/constants';
 
 export const RobinhoodContext = createContext();
 
 export const RobinhoodProvider = ({ children }) => {
-    const [currentAccount, setCurrentAccount] = useState("");
-    const [formattedAccount, setFormattedAccount] = useState("");
-    const [coinSelect, setCoinSelect] = useState("DOGE");
-    const [toCoin, setToCoin] = useState("");
-    const [balance, setBalance] = useState("");
+  const [currentAccount,    setCurrentAccount]    = useState('');
+  const [formattedAccount,  setFormattedAccount]  = useState('');
+  const [coinSelect,        setCoinSelect]         = useState('DOGE');
+  const [toCoin,            setToCoin]             = useState('ETH');
+  const [balance,           setBalance]            = useState('0.000');
+  const [amount,            setAmount]             = useState(0);
+  const [isAuthenticated,   setIsAuthenticated]    = useState(false);
+  const [provider,          setProvider]           = useState(null);
+  const [signer,            setSigner]             = useState(null);
 
-    const [amount, setAmount] = useState(0);
+  const getAbi = (coin) => {
+    if (coin === 'BTC')    return btcAbi;
+    if (coin === 'DOGE')   return dogeAbi;
+    if (coin === 'SOL')    return solanaAbi;
+    if (coin === 'USDC')   return usdcAbi;
+    return null;
+  };
 
-    const { isAuthenticated, authenticate, user, logout, Moralis, enableWeb3 } =
-        useMoralis();
+  const getAddress = (coin) => {
+    if (coin === 'BTC')    return btcAddress;
+    if (coin === 'DOGE')   return dogeAddress;
+    if (coin === 'SOL')    return solanaAddress;
+    if (coin === 'USDC')   return usdcAddress;
+    return null;
+  };
 
-    useEffect(() => {
-        async function userAccount(){
-            if (isAuthenticated) {
-                const account = user.get("ethAddress");
-                let formatAccount =
-                    account.slice(0, 4) + "..." + account.slice(-4);
-                setFormattedAccount(formatAccount);
-                setCurrentAccount(account);
+  const refreshBalance = useCallback(async (web3Provider, address) => {
+    try {
+      const raw = await web3Provider.getBalance(address);
+      const eth = ethers.utils.formatEther(raw);
+      setBalance(parseFloat(eth).toFixed(4));
+    } catch (e) {
+      console.error('Balance fetch failed:', e.message);
+    }
+  }, []);
 
-                const currentBalance =
-                    await Moralis.Web3API.account.getNativeBalance({
-                        chain: "rinkeby",
-                        address: currentAccount,
-                    });
-                const balanceToEth = Moralis.Units.FromWei(
-                    currentBalance.balance
-                );
-                const formattedBalance = parseFloat(balanceToEth).toFixed(3);
-                setBalance(formattedBalance);
-            }
-        };
+  const connectAccount = useCallback(async (address) => {
+    try {
+      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      const web3Signer   = web3Provider.getSigner();
 
-        userAccount();
-        
-    }, [isAuthenticated, enableWeb3]);
+      setCurrentAccount(address);
+      setFormattedAccount(address.slice(0, 4) + '...' + address.slice(-4));
+      setIsAuthenticated(true);
+      setProvider(web3Provider);
+      setSigner(web3Signer);
 
-    useEffect(() => {
-        if (!currentAccount) return;
-        (async () => {
-            const response = await fetch("/api/createUser", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    walletAddress: currentAccount,
-                }),
-            });
-            const data = await response.json();
-        })();
-    }, [currentAccount]);
+      await refreshBalance(web3Provider, address);
 
-    const getContractAddress = () => {
-        if (coinSelect === "BTC") return btcAddress;
-        if (coinSelect === "DOGE") return dogeAddress;
-        if (coinSelect === "SOLANA") return solanaAddress;
-        if (coinSelect === "USDC") return usdcAddress;
+      fetch('/api/createUser', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ walletAddress: address }),
+      }).catch(console.error);
+    } catch (e) {
+      console.error('connectAccount failed:', e.message);
+    }
+  }, [refreshBalance]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.ethereum) return;
+
+    window.ethereum
+      .request({ method: 'eth_accounts' })
+      .then((accounts) => { if (accounts.length > 0) connectAccount(accounts[0]); })
+      .catch(console.error);
+
+    const onAccountsChanged = (accounts) => {
+      if (accounts.length > 0) {
+        connectAccount(accounts[0]);
+      } else {
+        setIsAuthenticated(false);
+        setCurrentAccount('');
+        setFormattedAccount('');
+        setBalance('0.000');
+        setProvider(null);
+        setSigner(null);
+      }
     };
 
-    const getToAddress = () => {
-        if (toCoin === "BTC") return btcAddress;
-        if (toCoin === "DOGE") return dogeAddress;
-        if (toCoin === "SOLANA") return solanaAddress;
-        if (toCoin === "USDC") return usdcAddress;
-    };
+    window.ethereum.on('accountsChanged', onAccountsChanged);
+    return () => window.ethereum.removeListener('accountsChanged', onAccountsChanged);
+  }, [connectAccount]);
 
-    const getToAbi = () => {
-        if (toCoin === "BTC") return btcAbi;
-        if (toCoin === "DOGE") return dogeAbi;
-        if (toCoin === "SOLANA") return solanaAbi;
-        if (toCoin === "USDC") return usdcAbi;
-    };
+  const connectWallet = async () => {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      alert('MetaMask is not installed. Please install it from metamask.io and refresh.');
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length > 0) await connectAccount(accounts[0]);
+    } catch (e) {
+      console.error('Wallet connection rejected:', e.message);
+    }
+  };
 
-    const mint = async () => {
-        try {
-            if (coinSelect === "ETH") {
-                if (!isAuthenticated) return;
+  const signOut = () => {
+    setCurrentAccount('');
+    setFormattedAccount('');
+    setIsAuthenticated(false);
+    setBalance('0.000');
+    setProvider(null);
+    setSigner(null);
+  };
 
-                await Moralis.enableWeb3();
-                const contractAddress = getToAddress();
-                const abi = getToAbi();
+  const saveTransaction = (txHash, txAmount, toAddr) => {
+    fetch('/api/swapTokens', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        id:     txHash,
+        txHash,
+        from:   currentAccount,
+        to:     toAddr,
+        amount: parseFloat(txAmount).toFixed(6),
+      }),
+    }).catch(console.error);
+  };
 
-                let options = {
-                    contractAddress: contractAddress,
-                    functionName: "mint",
-                    abi: abi,
-                    params: {
-                        to: currentAccount,
-                        amount: Moralis.Units.Token("50", "18"),
-                    },
-                };
-                sendEth();
-                const transaction = await Moralis.executeFunction(options);
-                const receipt = await transaction.wait(4);
-                console.log(receipt);
-                saveTransaction(receipt.transactionHarsh, amount, receipt.to);
-            } else {
-                swapTokens();
-                saveTransaction(receipt.transactionHarsh, amount, receipt.to);
-            }
-        } catch (error) {
-            console.log(error.message);
-        }
-    };
+  const sendEth = async () => {
+    if (!isAuthenticated || !signer) return;
 
-    const swapTokens = async () => {
-        try {
-            if (!isAuthenticated) return;
-            await Moralis.enableWeb3();
+    const toAddr    = getAddress(toCoin);
+    if (!toAddr) return;
 
-            if (coinSelect === toCoin) return;
+    const sendAmt   = parseFloat(amount) * 0.015;
+    const tx        = await signer.sendTransaction({
+      to:    toAddr,
+      value: ethers.utils.parseEther(sendAmt.toFixed(18)),
+    });
+    const receipt = await tx.wait();
+    saveTransaction(receipt.transactionHash, sendAmt, receipt.to);
+    return receipt;
+  };
 
-            const fromOptions = {
-                type: "erc20",
-                amount: Moralis.Units.Token(amount, "18"),
-                receiver: getContractAddress(),
-                contractAddress: getContractAddress(),
-            };
-            const toMintOptions = {
-                contractAddress: getToAddress(),
-                functionName: "mint",
-                abi: getToAbi(),
-                params: {
-                    to: currentAccount,
-                    amount: Moralis.Units.Token(amount, "18"),
-                },
-            };
+  const mint = async () => {
+    if (!isAuthenticated || !signer) return;
 
-            let fromTransaction = await Moralis.transfer(fromOptions);
-            let toMintTransaction = await Moralis.executeFunction(
-                toMintOptions
-            );
-            let fromReceipt = await fromTransaction.wait();
-            let toReceipt = await toMintTransaction.wait();
+    try {
+      if (coinSelect === 'ETH') {
+        await sendEth();
 
-            console.log(fromReceipt);
-            console.log(toReceipt);
-        } catch (error) {
-            console.log(error.message);
-        }
-    };
+        const toAddr = getAddress(toCoin);
+        const toAbi  = getAbi(toCoin);
+        if (!toAddr || !toAbi) return;
 
-    const sendEth = async () => {
-        if (!isAuthenticated) return;
-        const contractAddress = getToAddress();
+        const contract = new ethers.Contract(toAddr, toAbi, signer);
+        const amtWei   = ethers.utils.parseUnits('50', 18);
+        const tx       = await contract.mint(currentAccount, amtWei);
+        const receipt  = await tx.wait(1);
+        saveTransaction(receipt.transactionHash, amount, receipt.to);
+      } else {
+        await swapTokens();
+      }
 
-        let sendAmount = amount * 0.015
+      if (provider && currentAccount) await refreshBalance(provider, currentAccount);
+    } catch (e) {
+      console.error('mint failed:', e.message);
+    }
+  };
 
-        let options = {
-            type: "native",
-            amount: Moralis.Units.ETH(`${sendAmount}`),
-            receiver: contractAddress,
-        };
+  const swapTokens = async () => {
+    if (!isAuthenticated || !signer) return;
+    if (coinSelect === toCoin) return;
 
-        const transaction = await Moralis.transfer(options);
-        const receipt = await transaction.wait();
-        console.log(receipt);
-        saveTransaction(receipt.transactionHarsh, sendAmount, receipt.to);
-    };
+    try {
+      const fromAddr = getAddress(coinSelect);
+      const fromAbi  = getAbi(coinSelect);
+      const toAddr   = getAddress(toCoin);
+      const toAbi    = getAbi(toCoin);
 
-    const saveTransaction = async (_id, txHash) => {
+      if (!fromAddr || !fromAbi || !toAddr || !toAbi) {
+        console.error('Could not resolve contract addresses for selected coins.');
+        return;
+      }
 
-        const contractAddress = getToAddress();
+      const amtWei       = ethers.utils.parseUnits(String(amount), 18);
+      const fromContract = new ethers.Contract(fromAddr, fromAbi, signer);
+      const toContract   = new ethers.Contract(toAddr,   toAbi,   signer);
 
-        let sendAmount = amount * 0.015
+      const fromTx       = await fromContract.transfer(fromAddr, amtWei);
+      await fromTx.wait();
 
-        await fetch("/api/swapTokens", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                id: _id,
-                txHash: txHash,
-                from: currentAccount,
-                to: contractAddress,
-                amount: sendAmount.toFixed(6),
-            }),
-        });
-    };
+      const toTx         = await toContract.mint(currentAccount, amtWei);
+      const toReceipt    = await toTx.wait();
+      saveTransaction(toReceipt.transactionHash, amount, toAddr);
 
-    const connectWallet = () => {
-        authenticate();
-    };
+      if (provider && currentAccount) await refreshBalance(provider, currentAccount);
+    } catch (e) {
+      console.error('swapTokens failed:', e.message);
+    }
+  };
 
-    const signOut = () => {
-        logout();
-    };
-
-    return (
-        <RobinhoodContext.Provider
-            value={{
-                connectWallet,
-                signOut,
-                currentAccount,
-                isAuthenticated,
-                formattedAccount,
-                setAmount,
-                mint,
-                setCoinSelect,
-                coinSelect,
-                balance,
-                swapTokens,
-                amount,
-                toCoin,
-                setToCoin,
-            }}
-        >
-            {children}
-        </RobinhoodContext.Provider>
-    );
+  return (
+    <RobinhoodContext.Provider
+      value={{
+        connectWallet,
+        signOut,
+        currentAccount,
+        isAuthenticated,
+        formattedAccount,
+        setAmount,
+        mint,
+        setCoinSelect,
+        coinSelect,
+        balance,
+        swapTokens,
+        amount,
+        toCoin,
+        setToCoin,
+        provider,
+        signer,
+      }}
+    >
+      {children}
+    </RobinhoodContext.Provider>
+  );
 };
